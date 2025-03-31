@@ -1,9 +1,15 @@
 import Input from "@/components/Input";
-import { ChangeEvent, MouseEventHandler, useRef, useState } from "react";
+import React, {
+  ChangeEvent,
+  MouseEventHandler,
+  useEffect,
+  useRef,
+  useState,
+} from "react";
 import { SubmitHandler, useForm } from "react-hook-form";
 import { FaEye } from "react-icons/fa6";
 import { IoIosEyeOff } from "react-icons/io";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import User from "../assets/signin.gif";
 import { FaFileUpload } from "react-icons/fa";
 import { MdDeleteForever } from "react-icons/md";
@@ -14,9 +20,13 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
+import { Id, toast } from "react-toastify";
+import { useLoginMutation, useRegisterMutation } from "@/redux/api/usersSlice";
+import { useDispatch, useSelector } from "react-redux";
+import { setCredentials, userState } from "@/redux/features/auth/authSlice";
 
 interface formData {
-  name: string;
+  username: string;
   email: string;
   password: string;
   profilePic: File | null;
@@ -47,10 +57,7 @@ const SignUp = () => {
   };
 
   const handleProfilePicChange = (e: ChangeEvent<HTMLInputElement>) => {
-    console.log("XXX");
-
     const file = e.target.files?.[0];
-
     console.log(file);
     if (file) {
       setPreview(URL.createObjectURL(file));
@@ -67,9 +74,59 @@ const SignUp = () => {
       profilePicRef.current.value = ""; // Reset the file input so it can detect new changes
     }
   };
-  const handleSignUp: SubmitHandler<formData> = (data: formData) => {
-    console.log(data);
+
+  const [registerApiCall] = useRegisterMutation();
+  const [login] = useLoginMutation();
+  const dispatch = useDispatch();
+  const navigate = useNavigate();
+  const { userInfo } = useSelector(
+    (state: { auth: { userInfo: userState } }) => state.auth
+  );
+
+  const toastId = React.useRef<null | Id>(null);
+  const registerSuccessToast = () =>
+    (toastId.current = toast.loading(
+      "Registered successfully,Logging you in..."
+    ));
+
+  const dismissRegisterSuccessToast = () =>
+    toast.dismiss(toastId.current as Id);
+
+  const handleSignUp: SubmitHandler<formData> = async (data: formData) => {
+    if (data.password !== data.confirmPassword) {
+      toast.error("Password must be confirmed...");
+      return;
+    }
+    const formData = new FormData();
+    formData.append("username", data.username);
+    formData.append("email", data.email);
+    formData.append("password", data.password);
+    if (data.profilePic?.name) formData.append("profilePic", data.profilePic);
+    try {
+      const response = await registerApiCall(formData).unwrap();
+      if (response.status === 200) {
+        registerSuccessToast();
+        const loginResponse = await login({
+          email: data.email,
+          password: data.password,
+        }).unwrap();
+        setTimeout(async () => {
+          if (loginResponse.status === 200) {
+            dismissRegisterSuccessToast();
+            toast.success(`Welcome , ${loginResponse.data.username}`);
+            dispatch(setCredentials(loginResponse.data));
+            navigate("/");
+          }
+        }, 1000);
+      }
+    } catch (error) {
+      toast.error(error.data.message || "An unknown error occurred");
+    }
   };
+
+  useEffect(() => {
+    if (userInfo) navigate("/");
+  }, [navigate, userInfo]);
 
   return (
     <div className="absolute  inset-0 bg-black/50 flex items-center justify-center">
@@ -129,17 +186,19 @@ const SignUp = () => {
         </div>
         <div className="w-full flex flex-col gap-y-2 mt-7">
           <Input
+            className=""
             label="Name :"
             type="text"
             placeholder="Enter name..."
-            {...register("name", { required: "Name is required" })}
+            {...register("username", { required: "Name is required" })}
           />
-          {errors.name && (
-            <p className="text-red-700 ml-3">{errors.name.message}...</p>
+          {errors.username && (
+            <p className="text-red-700 ml-3">{errors.username.message}...</p>
           )}
         </div>
         <div className="w-full flex flex-col gap-y-2 mt-5">
           <Input
+            className=""
             label="Email :"
             type="email"
             placeholder="Enter email..."
@@ -153,6 +212,7 @@ const SignUp = () => {
         </div>
         <div className="relative w-full flex flex-col gap-y-2 mt-5">
           <Input
+            className=""
             label="Password :"
             type={showPassword ? "text" : "password"}
             placeholder="Enter password..."
@@ -176,6 +236,7 @@ const SignUp = () => {
         )}
         <div className="relative w-full flex flex-col gap-y-2 mt-5">
           <Input
+            className=""
             label="ConfirmPassword :"
             type={showPassword ? "text" : "password"}
             placeholder="Confirm password..."

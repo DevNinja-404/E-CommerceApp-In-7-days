@@ -4,6 +4,13 @@ import "./index.css";
 import { RouterProvider } from "react-router-dom";
 import router from "./routes/index.ts";
 
+import { Provider } from "react-redux";
+import { store } from "./redux/features/store.ts";
+import Toast from "./components/Toast.tsx";
+
 createRoot(document.getElementById("root")!).render(
-  <RouterProvider router={router} />
+  <Provider store={store}>
+    <Toast />
+    <RouterProvider router={router} />
+  </Provider>
 );

@@ -1,4 +1,9 @@
-import express from "express";
+import express, {
+  ErrorRequestHandler,
+  NextFunction,
+  Request,
+  Response,
+} from "express";
 import cors from "cors";
 import cookieParser from "cookie-parser";
 
@@ -18,5 +23,15 @@ app.use(cookieParser());
 // Routes:
 import indexRouter from "./routes/index.js";
 app.use("/", indexRouter);
+
+// Handling erroe globally:
+
+app.use((err: Error, req: Request, res: Response, next: NextFunction) => {
+  console.log(err);
+  err.message = err ? err.toString() : "Something went wrong";
+  res
+    .status(500)
+    .json({ status: "error", statusCode: 500, message: err.message });
+});
 
 export default app;

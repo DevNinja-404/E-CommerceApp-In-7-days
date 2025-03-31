@@ -1,4 +1,4 @@
-import { Request, Response } from "express";
+import { NextFunction, Request, Response } from "express";
 import { User } from "../models/userModel.js";
 import { asyncHandler } from "../utils/asyncHandler.js";
 import jwt from "jsonwebtoken";
@@ -18,10 +18,9 @@ const generateAccessAndRefreshToken = async (userId: Types.ObjectId) => {
     await user.save({
       validateBeforeSave: false,
     });
-
     return { accessToken, refreshToken };
   } catch (err) {
-    throw new Error("Error while generating access and refresh tokens");
+    throw new Error("Error while generating access and refresh token");
   }
 };
 
@@ -43,6 +42,10 @@ const registerUser = asyncHandler(async (req, res) => {
   if (existingUser) throw new Error("User already exists with provided email");
 
   const profilePicLocalPath = req.file?.path;
+  console.log(req.file);
+
+  console.log(profilePicLocalPath);
+
   let profilePic;
   if (profilePicLocalPath) {
     profilePic = await uploadOnCloudinary(profilePicLocalPath);
@@ -61,13 +64,16 @@ const registerUser = asyncHandler(async (req, res) => {
   );
   if (!createdUser) throw new Error("Error while creating the user");
 
-  res
-    .status(200)
-    .json({ data: createdUser, msg: "User registeres successfully" });
+  res.status(200).json({
+    status: 200,
+    data: createdUser,
+    msg: "User registeres successfully",
+  });
 });
 
 const loginUser = asyncHandler(async (req, res) => {
   const { email, password } = req.body;
+  console.log(email, password);
 
   if (!email || !password) throw new Error("Email and Password are needed");
 
@@ -82,7 +88,7 @@ const loginUser = asyncHandler(async (req, res) => {
   );
 
   const loggedInUser = await User.findById(user._id).select(
-    "-password -refreshToken -isAdmin"
+    "-password -refreshToken "
   );
 
   const options = {
@@ -96,7 +102,11 @@ const loginUser = asyncHandler(async (req, res) => {
     .status(200)
     .cookie("accessToken", accessToken, options)
     .cookie("refreshToken", refreshToken, options)
-    .json({ data: loggedInUser, msg: "User Logged In Successfully" });
+    .json({
+      status: 200,
+      data: loggedInUser,
+      msg: "User Logged In Successfully",
+    });
 });
 
 const logoutUser = asyncHandler(async (req, res) => {
@@ -123,7 +133,7 @@ const logoutUser = asyncHandler(async (req, res) => {
     .status(200)
     .clearCookie("accessToken", options)
     .clearCookie("refreshToken", options)
-    .json({ data: {}, msg: "User Loggedout successfully" });
+    .json({ status: 200, data: {}, msg: "User Loggedout successfully" });
 });
 
 const getCurrentUser = asyncHandler(async (req, res) => {

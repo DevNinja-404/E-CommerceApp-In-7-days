@@ -2,7 +2,7 @@ import { UseFormRegister } from "react-hook-form";
 import { forwardRef, InputHTMLAttributes } from "react";
 
 interface formData {
-  name: string;
+  username: string;
   email: string;
   password: string;
   confirmPassword: string;

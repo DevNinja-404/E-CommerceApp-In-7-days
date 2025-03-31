@@ -47,7 +47,7 @@ export const Footer = () => {
 
   return (
     <motion.div
-      className="bg-slate-900 w-full rounded-t-lg grid md:grid-cols-4 lg:grid-cols-4 p-10 place-content-center space-y-10 md:space-y-0 space-x-4"
+      className="bg-slate-900 w-full rounded-t-lg grid md:grid-cols-4 lg:grid-cols-4 p-10 place-content-center place-items-center space-y-10 md:space-y-0 space-x-4"
       // style={{ scale, opacity }}
     >
       <div className="text-white  md:ml-10 text-2xl font-semibold flex items-center">
